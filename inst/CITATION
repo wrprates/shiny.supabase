@@ -1,0 +1,14 @@
+citHeader("To cite shiny.supabase in publications use:")
+
+citEntry(
+  entry    = "Manual",
+  title    = "shiny.supabase: Supabase Authentication for Shiny Applications",
+  author   = "Wlademir Prates",
+  year     = "2024",
+  note     = "R package version 0.1.0",
+  url      = "https://github.com/wrprates/shiny.supabase",
+  textVersion = paste("Prates, W. (2024).",
+                      "shiny.supabase: Supabase Authentication for Shiny Applications.",
+                      "R package version 0.1.0.",
+                      "https://github.com/wrprates/shiny.supabase")
+)

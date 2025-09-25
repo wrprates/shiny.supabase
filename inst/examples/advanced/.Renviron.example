@@ -1,0 +1,15 @@
+# Supabase configuration example
+# Copy this file to .Renviron and fill with your credentials
+
+# Your Supabase project URL
+SUPABASE_URL=https://your-project.supabase.co
+
+# Supabase anonymous (public) key
+# You can find this information at:
+# Supabase Dashboard > Settings > API
+SUPABASE_ANON_KEY=your-anon-key-here
+
+# IMPORTANT:
+# - Remove quotes from keys
+# - Never commit the real .Renviron file
+# - Restart R after creating/modifying .Renviron
