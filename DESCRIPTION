@@ -7,7 +7,7 @@ Maintainer: Wlademir Prates <wrprates@yahoo.com>
 Description: Provides easy-to-use authentication modules for integrating
     Supabase authentication into Shiny applications. Includes login/logout
     modules, session management, and route protection utilities.
-License: MIT + file LICENSE
+License: MIT
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
@@ -16,13 +16,11 @@ Imports:
     shiny (>= 1.7.0),
     httr2 (>= 1.0.0),
     jsonlite (>= 1.8.0),
-    shinyjs (>= 2.1.0),
-    DT (>= 0.20)
+    shinyjs (>= 2.1.0)
 Suggests:
     testthat (>= 3.0.0),
-    knitr,
-    rmarkdown
-VignetteBuilder: knitr
+    DT (>= 0.20),
+    shinydashboard
 URL: https://github.com/wrprates/shiny.supabase
 BugReports: https://github.com/wrprates/shiny.supabase/issues
 

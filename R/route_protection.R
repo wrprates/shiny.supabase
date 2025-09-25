@@ -11,7 +11,7 @@
 #' @return A Shiny UI function that handles authentication
 #' @export
 #'
-#' @importFrom shiny conditionalPanel
+#' @importFrom shiny conditionalPanel HTML
 require_auth <- function(ui_function, client, login_title = "Authentication Required", show_signup = TRUE) {
   function(request) {
     shiny::tagList(
@@ -186,6 +186,7 @@ check_user_role <- function(user_state, required_roles = NULL, check_function = 
 #'
 #' @return HTML script tag with JavaScript handlers
 #' @keywords internal
+#' @importFrom shiny HTML
 auth_js_handlers <- function() {
   shiny::tags$script(HTML("
     // Handle authentication status updates

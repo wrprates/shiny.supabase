@@ -29,16 +29,16 @@ supabase_auth_ui <- function(id, title = "Login", show_signup = TRUE, custom_css
         shiny::textInput(
           ns("email"),
           "Email:",
-          placeholder = "seu@email.com"
+          placeholder = "your@email.com"
         ),
         shiny::passwordInput(
           ns("password"),
           "Password:",
-          placeholder = "Sua senha"
+          placeholder = "Your password"
         ),
         shiny::actionButton(
           ns("login_btn"),
-          "Entrar",
+          "Sign In",
           class = "btn-primary btn-block",
           style = "width: 100%; margin-bottom: 10px;"
         ),
@@ -47,7 +47,7 @@ supabase_auth_ui <- function(id, title = "Login", show_signup = TRUE, custom_css
             style = "text-align: center;",
             shiny::actionButton(
               ns("show_signup"),
-              "Criar conta",
+              "Create account",
               class = "btn-link",
               style = "padding: 0; border: none; background: none; color: #007bff; text-decoration: underline;"
             )
@@ -63,21 +63,21 @@ supabase_auth_ui <- function(id, title = "Login", show_signup = TRUE, custom_css
           shiny::textInput(
             ns("signup_email"),
             "Email:",
-            placeholder = "seu@email.com"
+            placeholder = "your@email.com"
           ),
           shiny::passwordInput(
             ns("signup_password"),
             "Password:",
-            placeholder = "Sua senha"
+            placeholder = "Your password"
           ),
           shiny::passwordInput(
             ns("signup_confirm"),
-            "Confirmar Password:",
-            placeholder = "Confirme sua senha"
+            "Confirm Password:",
+            placeholder = "Confirm your password"
           ),
           shiny::actionButton(
             ns("signup_btn"),
-            "Criar Conta",
+            "Create Account",
             class = "btn-success btn-block",
             style = "width: 100%; margin-bottom: 10px;"
           ),
@@ -85,7 +85,7 @@ supabase_auth_ui <- function(id, title = "Login", show_signup = TRUE, custom_css
             style = "text-align: center;",
             shiny::actionButton(
               ns("show_login"),
-              "Já tenho conta",
+              "Already have account",
               class = "btn-link",
               style = "padding: 0; border: none; background: none; color: #007bff; text-decoration: underline;"
             )
@@ -143,7 +143,7 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
 
       if (input$email == "" || input$password == "") {
         shiny::showNotification(
-          "Email e senha são obrigatórios",
+          "Email and password are required",
           type = "warning",
           duration = 3
         )
@@ -185,7 +185,7 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
 
       if (input$signup_password != input$signup_confirm) {
         shiny::showNotification(
-          "As senhas não coincidem",
+          "Passwords do not match",
           type = "warning",
           duration = 3
         )
@@ -205,7 +205,7 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
 
       if (result$success) {
         shiny::showNotification(
-          "Conta criada! Verifique seu email para confirmação.",
+          "Account created! Check your email for confirmation.",
           type = "default",
           duration = 5
         )
