@@ -54,34 +54,40 @@ supabase_signin <- function(client, email, password) {
     stop("'client' must be a supabase_client object")
   }
 
-  tryCatch({
-    response <- httr2::request(paste0(client$auth_url, "/token?grant_type=password")) |>
-      httr2::req_headers(
-        "apikey" = client$key,
-        "Content-Type" = "application/json"
-      ) |>
-      httr2::req_body_json(list(
-        grant_type = "password",
-        email = email,
-        password = password
+  tryCatch(
+    {
+      response <- httr2::request(paste0(
+        client$auth_url,
+        "/token?grant_type=password"
       )) |>
-      httr2::req_perform()
+        httr2::req_headers(
+          "apikey" = client$key,
+          "Content-Type" = "application/json"
+        ) |>
+        httr2::req_body_json(list(
+          grant_type = "password",
+          email = email,
+          password = password
+        )) |>
+        httr2::req_perform()
 
-    if (httr2::resp_status(response) == 200) {
-      result <- httr2::resp_body_json(response)
-      return(list(
-        success = TRUE,
-        user = result$user,
-        access_token = result$access_token,
-        refresh_token = result$refresh_token,
-        expires_at = result$expires_at
-      ))
-    } else {
-      return(list(success = FALSE, error = "Invalid credentials"))
+      if (httr2::resp_status(response) == 200) {
+        result <- httr2::resp_body_json(response)
+        return(list(
+          success = TRUE,
+          user = result$user,
+          access_token = result$access_token,
+          refresh_token = result$refresh_token,
+          expires_at = result$expires_at
+        ))
+      } else {
+        return(list(success = FALSE, error = "Invalid credentials"))
+      }
+    },
+    error = function(e) {
+      return(list(success = FALSE, error = e$message))
     }
-  }, error = function(e) {
-    return(list(success = FALSE, error = e$message))
-  })
+  )
 }
 
 #' Sign up with email and password
@@ -111,32 +117,35 @@ supabase_signup <- function(client, email, password, metadata = NULL) {
     body$data <- metadata
   }
 
-  tryCatch({
-    response <- httr2::request(paste0(client$auth_url, "/signup")) |>
-      httr2::req_headers(
-        "apikey" = client$key,
-        "Content-Type" = "application/json"
-      ) |>
-      httr2::req_body_json(body) |>
-      httr2::req_perform()
+  tryCatch(
+    {
+      response <- httr2::request(paste0(client$auth_url, "/signup")) |>
+        httr2::req_headers(
+          "apikey" = client$key,
+          "Content-Type" = "application/json"
+        ) |>
+        httr2::req_body_json(body) |>
+        httr2::req_perform()
 
-    result <- httr2::resp_body_json(response)
+      result <- httr2::resp_body_json(response)
 
-    if (httr2::resp_status(response) == 200) {
-      return(list(
-        success = TRUE,
-        user = result$user,
-        message = "Check your email for confirmation link"
-      ))
-    } else {
-      return(list(
-        success = FALSE,
-        error = result$error_description %||% result$msg %||% "Signup failed"
-      ))
+      if (httr2::resp_status(response) == 200) {
+        return(list(
+          success = TRUE,
+          user = result$user,
+          message = "Check your email for confirmation link"
+        ))
+      } else {
+        return(list(
+          success = FALSE,
+          error = result$error_description %||% result$msg %||% "Signup failed"
+        ))
+      }
+    },
+    error = function(e) {
+      return(list(success = FALSE, error = e$message))
     }
-  }, error = function(e) {
-    return(list(success = FALSE, error = e$message))
-  })
+  )
 }
 
 #' Sign out user
@@ -155,19 +164,24 @@ supabase_signout <- function(client, access_token) {
     stop("'client' must be a supabase_client object")
   }
 
-  tryCatch({
-    response <- httr2::request(paste0(client$auth_url, "/logout")) |>
-      httr2::req_headers(
-        "apikey" = client$key,
-        "Authorization" = paste("Bearer", access_token),
-        "Content-Type" = "application/json"
-      ) |>
-      httr2::req_perform()
+  tryCatch(
+    {
+      response <- httr2::request(paste0(client$auth_url, "/logout")) |>
+        httr2::req_headers(
+          "apikey" = client$key,
+          "Authorization" = paste("Bearer", access_token),
+          "Content-Type" = "application/json"
+        ) |>
+        httr2::req_body_json(list()) |>
+        httr2::req_perform()
 
-    return(list(success = httr2::resp_status(response) == 204))
-  }, error = function(e) {
-    return(list(success = FALSE, error = e$message))
-  })
+      status <- httr2::resp_status(response)
+      return(list(success = status %in% c(200, 204)))
+    },
+    error = function(e) {
+      return(list(success = FALSE, error = e$message))
+    }
+  )
 }
 
 #' Get user information
@@ -186,22 +200,25 @@ get_user_info <- function(client, access_token) {
     stop("'client' must be a supabase_client object")
   }
 
-  tryCatch({
-    response <- httr2::request(paste0(client$auth_url, "/user")) |>
-      httr2::req_headers(
-        "apikey" = client$key,
-        "Authorization" = paste("Bearer", access_token)
-      ) |>
-      httr2::req_perform()
+  tryCatch(
+    {
+      response <- httr2::request(paste0(client$auth_url, "/user")) |>
+        httr2::req_headers(
+          "apikey" = client$key,
+          "Authorization" = paste("Bearer", access_token)
+        ) |>
+        httr2::req_perform()
 
-    if (httr2::resp_status(response) == 200) {
-      return(httr2::resp_body_json(response))
-    } else {
+      if (httr2::resp_status(response) == 200) {
+        return(httr2::resp_body_json(response))
+      } else {
+        return(NULL)
+      }
+    },
+    error = function(e) {
       return(NULL)
     }
-  }, error = function(e) {
-    return(NULL)
-  })
+  )
 }
 
 # Helper function for NULL coalescing
