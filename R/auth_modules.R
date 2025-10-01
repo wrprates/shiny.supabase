@@ -12,7 +12,12 @@
 #'
 #' @importFrom shiny NS tagList fluidPage div h3 textInput passwordInput actionButton
 #' @importFrom shinyjs useShinyjs
-supabase_auth_ui <- function(id, title = "Login", show_signup = TRUE, custom_css = NULL) {
+supabase_auth_ui <- function(
+  id,
+  title = "Login",
+  show_signup = TRUE,
+  custom_css = NULL
+) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
@@ -145,7 +150,7 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
         shiny::showNotification(
           "Email and password are required",
           type = "warning",
-          duration = 3
+          duration = 5
         )
         return()
       }
@@ -161,18 +166,17 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
         ))
 
         shiny::showNotification(
-          "Login realizado com sucesso!",
+          "Login successful!",
           type = "default",
-          duration = 3
+          duration = 5
         )
 
         # Clear form
         shiny::updateTextInput(session, "email", value = "")
         shiny::updateTextInput(session, "password", value = "")
-
       } else {
         shiny::showNotification(
-          paste("Erro no login:", result$error),
+          paste("Login error:", result$error),
           type = "warning",
           duration = 5
         )
@@ -181,27 +185,35 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
 
     # Handle signup
     shiny::observeEvent(input$signup_btn, {
-      shiny::req(input$signup_email, input$signup_password, input$signup_confirm)
+      shiny::req(
+        input$signup_email,
+        input$signup_password,
+        input$signup_confirm
+      )
 
       if (input$signup_password != input$signup_confirm) {
         shiny::showNotification(
           "Passwords do not match",
           type = "warning",
-          duration = 3
+          duration = 5
         )
         return()
       }
 
       if (nchar(input$signup_password) < 6) {
         shiny::showNotification(
-          "A senha deve ter pelo menos 6 caracteres",
+          "Password must have at least 6 characters",
           type = "warning",
-          duration = 3
+          duration = 5
         )
         return()
       }
 
-      result <- supabase_signup(client, input$signup_email, input$signup_password)
+      result <- supabase_signup(
+        client,
+        input$signup_email,
+        input$signup_password
+      )
 
       if (result$success) {
         shiny::showNotification(
@@ -218,10 +230,9 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
         shiny::updateTextInput(session, "signup_email", value = "")
         shiny::updateTextInput(session, "signup_password", value = "")
         shiny::updateTextInput(session, "signup_confirm", value = "")
-
       } else {
         shiny::showNotification(
-          paste("Erro ao criar conta:", result$error),
+          paste("Account creation error:", result$error),
           type = "warning",
           duration = 5
         )
@@ -264,7 +275,6 @@ supabase_logout_ui <- function(id, label = "Logout", class = "btn-danger") {
 #' @importFrom shiny moduleServer observeEvent showNotification
 supabase_logout_server <- function(id, client, user_state) {
   shiny::moduleServer(id, function(input, output, session) {
-
     shiny::observeEvent(input$logout, {
       current_state <- user_state()
 
@@ -275,24 +285,31 @@ supabase_logout_server <- function(id, client, user_state) {
           user_state(list(
             authenticated = FALSE,
             user = NULL,
-            access_token = NULL
+            access_token = NULL,
+            refresh_token = NULL
           ))
 
           shiny::showNotification(
-            "Logout realizado com sucesso!",
-            type = "default",
-            duration = 3
+            "Logout successful!",
+            type = "message",
+            duration = 5
           )
         } else {
           shiny::showNotification(
-            "Erro no logout",
-            type = "warning",
-            duration = 3
+            paste("Logout error:", result$error %||% "Unknown error"),
+            type = "error",
+            duration = 5
           )
         }
+      } else {
+        shiny::showNotification(
+          "User is not authenticated",
+          type = "warning",
+          duration = 5
+        )
       }
     })
 
-    return(user_state)
+    user_state
   })
 }

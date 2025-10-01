@@ -12,11 +12,17 @@
 #' @export
 #'
 #' @importFrom shiny conditionalPanel HTML
-require_auth <- function(ui_function, client, login_title = "Authentication Required", show_signup = TRUE) {
+require_auth <- function(
+  ui_function,
+  client,
+  login_title = "Authentication Required",
+  show_signup = TRUE
+) {
   function(request) {
     shiny::tagList(
       # JavaScript to manage authentication state
-      shiny::tags$script(HTML("
+      shiny::tags$script(HTML(
+        "
         window.shinySupabaseAuth = {
           authenticated: false,
           setAuth: function(status) {
@@ -29,7 +35,8 @@ require_auth <- function(ui_function, client, login_title = "Authentication Requ
         Shiny.addCustomMessageHandler('supabase-auth-status', function(message) {
           window.shinySupabaseAuth.setAuth(message.authenticated);
         });
-      ")),
+      "
+      )),
 
       # Conditional panels based on authentication status
       shiny::conditionalPanel(
@@ -58,7 +65,6 @@ require_auth <- function(ui_function, client, login_title = "Authentication Requ
 #' @importFrom shiny observe req
 auth_server_guard <- function(client, protected_server_function) {
   function(input, output, session) {
-
     # Initialize authentication module
     user_state <- supabase_auth_server("auth", client)
 
@@ -73,12 +79,8 @@ auth_server_guard <- function(client, protected_server_function) {
       )
     })
 
-    # Only run protected server logic if authenticated
-    shiny::observe({
-      if (user_state()$authenticated) {
-        protected_server_function(input, output, session, user_state)
-      }
-    })
+    # Initialize protected server once
+    protected_server_function(input, output, session, user_state)
 
     # Return user state for external use
     return(user_state)
@@ -158,7 +160,11 @@ session_manager <- function(client, session) {
 #' @export
 #'
 #' @importFrom shiny reactive
-check_user_role <- function(user_state, required_roles = NULL, check_function = NULL) {
+check_user_role <- function(
+  user_state,
+  required_roles = NULL,
+  check_function = NULL
+) {
   shiny::reactive({
     current_user <- user_state()
 
@@ -170,7 +176,9 @@ check_user_role <- function(user_state, required_roles = NULL, check_function = 
       return(check_function(current_user))
     }
 
-    if (!is.null(required_roles) && !is.null(current_user$user$app_metadata$roles)) {
+    if (
+      !is.null(required_roles) && !is.null(current_user$user$app_metadata$roles)
+    ) {
       user_roles <- current_user$user$app_metadata$roles
       return(any(required_roles %in% user_roles))
     }
@@ -188,7 +196,8 @@ check_user_role <- function(user_state, required_roles = NULL, check_function = 
 #' @keywords internal
 #' @importFrom shiny HTML
 auth_js_handlers <- function() {
-  shiny::tags$script(HTML("
+  shiny::tags$script(HTML(
+    "
     // Handle authentication status updates
     Shiny.addCustomMessageHandler('supabase-auth-status', function(message) {
       window.shinySupabaseAuth.setAuth(message.authenticated);
@@ -216,5 +225,6 @@ auth_js_handlers <- function() {
         localStorage.removeItem('supabase-auth');
       }
     });
-  "))
+  "
+  ))
 }
