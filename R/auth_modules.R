@@ -158,12 +158,23 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
       result <- supabase_signin(client, input$email, input$password)
 
       if (result$success) {
+        # Store in server-side session state (secure)
         user_state(list(
           authenticated = TRUE,
           user = result$user,
           access_token = result$access_token,
-          refresh_token = result$refresh_token
+          refresh_token = result$refresh_token,
+          expires_at = result$expires_at
         ))
+
+        # Also store in session$userData for persistence
+        session$userData$supabase_auth <- list(
+          authenticated = TRUE,
+          user = result$user,
+          access_token = result$access_token,
+          refresh_token = result$refresh_token,
+          expires_at = result$expires_at
+        )
 
         shiny::showNotification(
           "Login successful!",
@@ -268,12 +279,13 @@ supabase_logout_ui <- function(id, label = "Logout", class = "btn-danger") {
 #' @param id Module namespace ID
 #' @param client Supabase client object
 #' @param user_state Reactive containing current user state
+#' @param reload_on_logout Whether to reload the page after logout (default: FALSE)
 #'
 #' @return Updated user state reactive
 #' @export
 #'
 #' @importFrom shiny moduleServer observeEvent showNotification
-supabase_logout_server <- function(id, client, user_state) {
+supabase_logout_server <- function(id, client, user_state, reload_on_logout = FALSE) {
   shiny::moduleServer(id, function(input, output, session) {
     shiny::observeEvent(input$logout, {
       current_state <- user_state()
@@ -282,18 +294,35 @@ supabase_logout_server <- function(id, client, user_state) {
         result <- supabase_signout(client, current_state$access_token)
 
         if (result$success) {
+          # Clear server-side session state
           user_state(list(
             authenticated = FALSE,
             user = NULL,
             access_token = NULL,
-            refresh_token = NULL
+            refresh_token = NULL,
+            expires_at = NULL
           ))
 
-          shiny::showNotification(
-            "Logout successful!",
-            type = "message",
-            duration = 5
-          )
+          # Clear session$userData
+          session$userData$supabase_auth <- NULL
+
+          # Show notification before reload (if enabled)
+          if (!reload_on_logout) {
+            shiny::showNotification(
+              "Logout successful!",
+              type = "message",
+              duration = 3
+            )
+          }
+
+          # Optional: reload page to ensure clean state
+          if (reload_on_logout) {
+            # Use a small delay to ensure state is cleared
+            shiny::invalidateLater(100, session)
+            shiny::observe({
+              session$reload()
+            })
+          }
         } else {
           shiny::showNotification(
             paste("Logout error:", result$error %||% "Unknown error"),

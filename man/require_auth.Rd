@@ -26,4 +26,5 @@ A Shiny UI function that handles authentication
 \description{
 A higher-order function that wraps Shiny app content to require authentication.
 Shows login form if user is not authenticated, otherwise shows the protected content.
+All authentication logic is handled server-side for security.
 }
