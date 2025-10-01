@@ -7,3 +7,4 @@
 ^\.gitignore$
 ^\.DS_Store$
 ^app\.R$
+^\.claude$

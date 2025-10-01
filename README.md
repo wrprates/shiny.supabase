@@ -1,9 +1,22 @@
-# shiny.supabase
+# shiny.supabase 🔒
 
 [![R-CMD-check](https://github.com/wrprates/shiny.supabase/workflows/R-CMD-check/badge.svg)](https://github.com/wrprates/shiny.supabase/actions)
 [![CRAN status](https://www.r-pkg.org/badges/version/shiny.supabase)](https://CRAN.R-project.org/package=shiny.supabase)
 
-Supabase authentication for Shiny applications. This package provides simple, secure authentication modules that integrate seamlessly with your existing Shiny apps.
+**Secure, server-side Supabase authentication for Shiny applications.**
+
+This package provides enterprise-grade authentication modules with complete server-side validation. All authentication logic is handled server-side to prevent client-side manipulation and ensure maximum security.
+
+## 🔐 Security Features
+
+- ✅ **100% Server-Side Authentication** - No client-side state exposure
+- ✅ **Automatic Token Validation** - Tokens validated with Supabase regularly
+- ✅ **Auto Token Refresh** - Seamless token renewal before expiration
+- ✅ **Session Security** - Tokens stored in server memory only
+- ✅ **Rate Limiting** - Built-in brute force protection
+- ✅ **Server-Side Rendering** - Protected content never reaches unauthenticated clients
+
+See [SECURITY.md](SECURITY.md) for detailed security architecture.
 
 ## Installation
 
@@ -53,9 +66,14 @@ protected_server <- function(input, output, session, user_state) {
   supabase_logout_server("logout", client, user_state)
 }
 
-# Create app with authentication
+# Create secure app with server-side authentication
 ui <- require_auth(protected_ui, client, "Please Sign In")
-server <- auth_server_guard(client, protected_server)
+server <- auth_server_guard(
+  client,
+  protected_server,
+  ui_function = protected_ui,    # Required for server-side rendering
+  auto_refresh = TRUE             # Enable automatic token refresh
+)
 
 shinyApp(ui, server)
 ```

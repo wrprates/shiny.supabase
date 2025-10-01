@@ -4,16 +4,19 @@
 \alias{protected_page}
 \title{Protected Page Wrapper}
 \usage{
-protected_page(content, fallback_content = NULL)
+protected_page(user_state, content, fallback_content = NULL)
 }
 \arguments{
-\item{content}{UI content to protect}
+\item{user_state}{Reactive containing authentication state}
+
+\item{content}{UI content to protect (can be function or UI object)}
 
 \item{fallback_content}{Content to show when not authenticated (optional)}
 }
 \value{
-Protected UI content
+Protected UI content based on authentication state
 }
 \description{
-Simpler wrapper for individual pages that need authentication.
+Server-side wrapper for individual pages that need authentication.
+Use this within renderUI to conditionally show content based on auth state.
 }

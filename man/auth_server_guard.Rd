@@ -4,16 +4,32 @@
 \alias{auth_server_guard}
 \title{Authentication Guard for Server}
 \usage{
-auth_server_guard(client, protected_server_function)
+auth_server_guard(
+  client,
+  protected_server_function,
+  ui_function = NULL,
+  login_title = "Authentication Required",
+  show_signup = TRUE,
+  auto_refresh = TRUE
+)
 }
 \arguments{
 \item{client}{Supabase client object}
 
 \item{protected_server_function}{Function containing the protected server logic}
+
+\item{ui_function}{UI function for protected content (required with require_auth)}
+
+\item{login_title}{Title for the login form (default: "Authentication Required")}
+
+\item{show_signup}{Whether to show signup option (default: TRUE)}
+
+\item{auto_refresh}{Enable automatic token refresh (default: TRUE)}
 }
 \value{
 A Shiny server function that handles authentication
 }
 \description{
 Server-side authentication guard that manages user state and protects server logic.
+All authentication state is stored server-side only. No client-side state exposure.
 }

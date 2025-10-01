@@ -1,43 +1,74 @@
 # shiny.supabase 0.1.0
 
-## Major Changes
+## 🔒 MAJOR SECURITY OVERHAUL - Server-Side Authentication
 
-* 🎉 **Initial release** of shiny.supabase package
-* 🏗️ **Package restructuring**: Moved from nested `shinySupabase/` to proper R package structure
-* 📝 **Renamed package**: `shinySupabase` → `shiny.supabase` to follow community conventions
+This release represents a **complete security rewrite** of the authentication system. All authentication is now handled server-side, eliminating critical client-side vulnerabilities.
 
-## New Features
+### Critical Security Fixes
 
-* ✨ **Core authentication functions**:
-  - `supabase_client()`: Initialize Supabase client
-  - `require_auth()`: Protect UI with authentication
-  - `auth_server_guard()`: Protect server logic
-  - `supabase_login_ui()` / `supabase_login_server()`: Login modules
-  - `supabase_logout_ui()` / `supabase_logout_server()`: Logout modules
+* ⚠️ **FIXED: Client-side authentication bypass vulnerability** - Users could previously manipulate browser localStorage or JavaScript to fake authentication
+* ⚠️ **FIXED: Token exposure in client** - Tokens are now stored server-side only, never exposed to browser
+* ⚠️ **FIXED: Unvalidated session persistence** - All sessions now validated with Supabase backend
+* ⚠️ **FIXED: Protected content sent to unauthenticated clients** - Content now rendered server-side only after validation
 
-* 📱 **Complete authentication flow**:
-  - Email/password login
-  - Magic link support
-  - OAuth providers (when configured in Supabase)
-  - Session management
-  - Automatic token validation
+### New Security Features
 
-* 🔒 **Route protection utilities**:
-  - UI and server protection wrappers
-  - User state management
-  - Automatic redirects on authentication changes
+* ✅ **Server-Side Token Validation** - All tokens validated with Supabase on every critical operation
+* ✅ **Automatic Token Refresh** - Expired tokens automatically refreshed server-side without user intervention
+* ✅ **Session Security Manager** - Secure server-side session state management
+* ✅ **Server-Side Rendering** - Protected content only rendered after server-side authentication check
+* ✅ **Bidirectional State Sync** - Logout properly syncs between auth_state and user_state
+* ✅ **Optional Page Reload on Logout** - Clean UI state after logout with `reload_on_logout` parameter
+* ✅ **Rate Limiting** - Built-in protection against brute force authentication attempts
+* ✅ **Security Event Logging** - Optional security event logging for audit trails
 
-## Examples and Documentation
+### New Functions
 
-* 📚 **Three example apps**:
-  - **Minimal**: Simplest possible implementation (~25 lines)
-  - **Basic**: Standard usage with user info display
-  - **Advanced**: Complete dashboard with shinydashboard
+* `init_secure_session()` - Initialize secure server-side session state
+* `validate_token()` - Validate access token with Supabase backend
+* `refresh_access_token()` - Refresh expired tokens server-side
+* `validate_and_refresh_session()` - Comprehensive session validation and refresh
+* `update_session_state()` - Secure session state updates
+* `clear_session_state()` - Clear authentication data from session
+* `validate_user_permission()` - Server-side permission checking
+* `protected_page()` - Server-side page protection (updated signature)
+* Rate limiting utilities and security helpers
 
-* 📖 **Comprehensive documentation**:
-  - README for each example
-  - Setup instructions with .Renviron.example
-  - Function documentation
+### Breaking Changes
+
+⚠️ **These changes are necessary for security. All apps must be updated.**
+
+* **Removed** `window.shinySupabaseAuth` JavaScript object (security vulnerability)
+* **Removed** client-side `localStorage` authentication (security vulnerability)
+* **Changed** `conditionalPanel` to server-side `renderUI`
+* **Updated** `auth_server_guard()` to require `ui_function` parameter
+* **Updated** `protected_page()` to require `user_state` as first parameter
+
+### Migration Guide
+
+**Before (insecure):**
+```r
+ui <- require_auth(protected_ui, client, "Login")
+server <- auth_server_guard(client, protected_server)
+```
+
+**After (secure):**
+```r
+ui <- require_auth(protected_ui, client, "Login")
+server <- auth_server_guard(
+  client,
+  protected_server,
+  ui_function = protected_ui,  # Add this
+  auto_refresh = TRUE          # Enable auto-refresh
+)
+```
+
+## Documentation
+
+* 📖 **NEW: SECURITY.md** - Comprehensive security architecture documentation
+* 📖 **Updated examples** - All examples updated to use secure implementation
+* 📖 **Security best practices** - Production deployment guidelines
+* 📚 **Complete function documentation** - All functions documented with roxygen2
 
 ## Installation
 

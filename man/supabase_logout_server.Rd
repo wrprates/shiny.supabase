@@ -4,7 +4,7 @@
 \alias{supabase_logout_server}
 \title{Logout Server Module}
 \usage{
-supabase_logout_server(id, client, user_state)
+supabase_logout_server(id, client, user_state, reload_on_logout = FALSE)
 }
 \arguments{
 \item{id}{Module namespace ID}
@@ -12,6 +12,8 @@ supabase_logout_server(id, client, user_state)
 \item{client}{Supabase client object}
 
 \item{user_state}{Reactive containing current user state}
+
+\item{reload_on_logout}{Whether to reload the page after logout (default: FALSE)}
 }
 \value{
 Updated user state reactive

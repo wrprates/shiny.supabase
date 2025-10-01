@@ -15,5 +15,6 @@ session_manager(client, session)
 Reactive containing persistent user state
 }
 \description{
-Manages user session state across page reloads and tab navigation.
+Creates and manages secure server-side session state.
+No client-side storage or exposure of tokens.
 }
