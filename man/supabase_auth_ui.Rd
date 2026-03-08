@@ -4,7 +4,19 @@
 \alias{supabase_auth_ui}
 \title{Supabase Authentication UI Module}
 \usage{
-supabase_auth_ui(id, title = "Login", show_signup = TRUE, custom_css = NULL)
+supabase_auth_ui(
+  id,
+  title = "Login",
+  show_signup = TRUE,
+  custom_css = NULL,
+  custom_styles = NULL,
+  class_map = NULL,
+  theme = list(),
+  text = list(),
+  compact = FALSE,
+  enable_enter_submit = TRUE,
+  enable_password_toggle = TRUE
+)
 }
 \arguments{
 \item{id}{Module namespace ID}
@@ -13,7 +25,22 @@ supabase_auth_ui(id, title = "Login", show_signup = TRUE, custom_css = NULL)
 
 \item{show_signup}{Whether to show signup option (default: TRUE)}
 
-\item{custom_css}{Custom CSS classes for styling}
+\item{custom_css}{Custom CSS classes for the container}
+
+\item{custom_styles}{Raw CSS rules appended via \code{<style>} (optional)}
+
+\item{class_map}{Named list of extra classes for UI slots (container, card,
+title, panel, field, primary_button, secondary_button, link_wrap, messages)}
+
+\item{theme}{Named list of CSS variable overrides for default auth theme}
+
+\item{text}{Named list of UI text overrides for labels, placeholders and button text}
+
+\item{compact}{Use denser spacing for smaller layouts (default: FALSE)}
+
+\item{enable_enter_submit}{Enable Enter key submit for login/signup (default: TRUE)}
+
+\item{enable_password_toggle}{Show password visibility toggle button (default: TRUE)}
 }
 \value{
 A Shiny UI element

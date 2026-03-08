@@ -113,6 +113,7 @@ require_auth <- function(
 #' @param show_signup Whether to show signup option (default: TRUE)
 #' @param auto_refresh Enable automatic token refresh (default: TRUE)
 #' @param persist_session Persist authentication in browser storage across page reloads (default: TRUE)
+#' @param auth_ui_options Optional named list forwarded to \code{supabase_auth_ui()} for UI customization
 #'
 #' @return A Shiny server function that handles authentication
 #' @export
@@ -125,7 +126,8 @@ auth_server_guard <- function(
   login_title = "Authentication Required",
   show_signup = TRUE,
   auto_refresh = TRUE,
-  persist_session = TRUE
+  persist_session = TRUE,
+  auth_ui_options = list()
 ) {
   function(input, output, session, request = NULL) {
     debug_enabled <- isTRUE(getOption("shiny.supabase.debug", FALSE))
@@ -339,7 +341,15 @@ auth_server_guard <- function(
         }
       } else {
         # User not authenticated - show login form
-        supabase_auth_ui("auth", title = login_title, show_signup = show_signup)
+        ui_args <- modifyList(
+          list(
+            id = "auth",
+            title = login_title,
+            show_signup = show_signup
+          ),
+          auth_ui_options
+        )
+        do.call(supabase_auth_ui, ui_args)
       }
     })
 

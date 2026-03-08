@@ -11,7 +11,8 @@ auth_server_guard(
   login_title = "Authentication Required",
   show_signup = TRUE,
   auto_refresh = TRUE,
-  persist_session = TRUE
+  persist_session = TRUE,
+  auth_ui_options = list()
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ auth_server_guard(
 \item{auto_refresh}{Enable automatic token refresh (default: TRUE)}
 
 \item{persist_session}{Persist authentication in browser storage across page reloads (default: TRUE)}
+
+\item{auth_ui_options}{Optional named list forwarded to \code{supabase_auth_ui()} for UI customization}
 }
 \value{
 A Shiny server function that handles authentication

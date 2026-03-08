@@ -80,7 +80,7 @@ shinyApp(ui, server)
 
 ## Examples
 
-The package includes three complete example applications:
+The package includes four complete example applications:
 
 ```r
 # Minimal example (~25 lines)
@@ -88,6 +88,9 @@ shiny::runApp(system.file("examples/minimal", package = "shiny.supabase"))
 
 # Basic example with user info
 shiny::runApp(system.file("examples/basic", package = "shiny.supabase"))
+
+# Basic example in Portuguese (translated auth UI)
+shiny::runApp(system.file("examples/basic-pt", package = "shiny.supabase"))
 
 # Advanced dashboard
 shiny::runApp(system.file("examples/advanced", package = "shiny.supabase"))
