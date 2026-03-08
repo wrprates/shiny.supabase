@@ -118,13 +118,22 @@ supabase_auth_ui <- function(
       .ssb-auth__field {
         margin: 0;
       }
+      .ssb-auth__field .shiny-input-container {
+        width: 100%;
+      }
+      .ssb-auth__field .form-group {
+        margin-bottom: 0;
+      }
       .ssb-auth__field .control-label {
+        display: block;
         margin-bottom: 6px;
-        font-size: 0.95rem;
+        font-size: 0.88rem;
         font-weight: 600;
+        letter-spacing: 0.01em;
         color: var(--ssb-text, #111827);
       }
       .ssb-auth__field .form-control {
+        width: 100%;
         height: 44px;
         border-radius: 10px;
         border: 1px solid var(--ssb-input-border, #d1d5db);
@@ -208,11 +217,11 @@ supabase_auth_ui <- function(
           class = slot_class("panel", "ssb-auth__panel"),
           shiny::div(
             class = slot_class("field", "ssb-auth__field"),
-            shiny::textInput(ns("email"), "Email:", placeholder = "your@email.com")
+            shiny::textInput(ns("email"), "Email", placeholder = "you@email.com")
           ),
           shiny::div(
             class = slot_class("field", "ssb-auth__field"),
-            shiny::passwordInput(ns("password"), "Password:", placeholder = "Your password")
+            shiny::passwordInput(ns("password"), "Password", placeholder = "Your password")
           ),
           shiny::actionButton(
             ns("login_btn"),
@@ -237,15 +246,15 @@ supabase_auth_ui <- function(
             style = "display:none;",
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::textInput(ns("signup_email"), "Email:", placeholder = "your@email.com")
+              shiny::textInput(ns("signup_email"), "Email", placeholder = "you@email.com")
             ),
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::passwordInput(ns("signup_password"), "Password:", placeholder = "Your password")
+              shiny::passwordInput(ns("signup_password"), "Password", placeholder = "Create a password")
             ),
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::passwordInput(ns("signup_confirm"), "Confirm Password:", placeholder = "Confirm your password")
+              shiny::passwordInput(ns("signup_confirm"), "Confirm password", placeholder = "Re-enter your password")
             ),
             shiny::actionButton(
               ns("signup_btn"),
