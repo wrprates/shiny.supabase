@@ -10,6 +10,7 @@
 #' @param class_map Named list of extra classes for UI slots (container, card,
 #' title, panel, field, primary_button, secondary_button, link_wrap, messages)
 #' @param theme Named list of CSS variable overrides for default auth theme
+#' @param text Named list of UI text overrides for labels, placeholders and button text
 #' @param compact Use denser spacing for smaller layouts (default: FALSE)
 #' @param enable_enter_submit Enable Enter key submit for login/signup (default: TRUE)
 #'
@@ -26,6 +27,7 @@ supabase_auth_ui <- function(
   custom_styles = NULL,
   class_map = NULL,
   theme = list(),
+  text = list(),
   compact = FALSE,
   enable_enter_submit = TRUE
 ) {
@@ -36,6 +38,7 @@ supabase_auth_ui <- function(
   }
   class_map <- if (is.null(class_map)) list() else class_map
   theme <- if (is.null(theme)) list() else theme
+  text <- if (is.null(text)) list() else text
   slot_class <- function(slot, base) {
     extra <- class_map[[slot]]
     if (is.null(extra) || identical(extra, "")) {
@@ -64,6 +67,21 @@ supabase_auth_ui <- function(
     focus_ring = "rgba(37, 99, 235, 0.22)"
   )
   theme_values <- modifyList(theme_defaults, theme)
+  text_defaults <- list(
+    email_label = "Email",
+    password_label = "Password",
+    confirm_password_label = "Confirm password",
+    login_email_placeholder = "you@email.com",
+    login_password_placeholder = "Your password",
+    signup_email_placeholder = "you@email.com",
+    signup_password_placeholder = "Create a password",
+    signup_confirm_placeholder = "Re-enter your password",
+    login_button = "Sign In",
+    create_account_link = "Create account",
+    create_account_button = "Create Account",
+    already_account_link = "Already have account"
+  )
+  text_values <- modifyList(text_defaults, text)
   container_style <- paste0(
     "--ssb-max-width:", theme_values$max_width, ";",
     "--ssb-page-padding:", theme_values$page_padding, ";",
@@ -217,15 +235,23 @@ supabase_auth_ui <- function(
           class = slot_class("panel", "ssb-auth__panel"),
           shiny::div(
             class = slot_class("field", "ssb-auth__field"),
-            shiny::textInput(ns("email"), "Email", placeholder = "you@email.com")
+            shiny::textInput(
+              ns("email"),
+              text_values$email_label,
+              placeholder = text_values$login_email_placeholder
+            )
           ),
           shiny::div(
             class = slot_class("field", "ssb-auth__field"),
-            shiny::passwordInput(ns("password"), "Password", placeholder = "Your password")
+            shiny::passwordInput(
+              ns("password"),
+              text_values$password_label,
+              placeholder = text_values$login_password_placeholder
+            )
           ),
           shiny::actionButton(
             ns("login_btn"),
-            "Sign In",
+            text_values$login_button,
             class = slot_class("primary_button", "ssb-auth__primary btn-primary btn-block")
           ),
           if (show_signup) {
@@ -233,7 +259,7 @@ supabase_auth_ui <- function(
               class = slot_class("link_wrap", "ssb-auth__link-wrap"),
               shiny::actionButton(
                 ns("show_signup"),
-                "Create account",
+                text_values$create_account_link,
                 class = slot_class("secondary_button", "ssb-auth__link")
               )
             )
@@ -246,26 +272,38 @@ supabase_auth_ui <- function(
             style = "display:none;",
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::textInput(ns("signup_email"), "Email", placeholder = "you@email.com")
+              shiny::textInput(
+                ns("signup_email"),
+                text_values$email_label,
+                placeholder = text_values$signup_email_placeholder
+              )
             ),
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::passwordInput(ns("signup_password"), "Password", placeholder = "Create a password")
+              shiny::passwordInput(
+                ns("signup_password"),
+                text_values$password_label,
+                placeholder = text_values$signup_password_placeholder
+              )
             ),
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::passwordInput(ns("signup_confirm"), "Confirm password", placeholder = "Re-enter your password")
+              shiny::passwordInput(
+                ns("signup_confirm"),
+                text_values$confirm_password_label,
+                placeholder = text_values$signup_confirm_placeholder
+              )
             ),
             shiny::actionButton(
               ns("signup_btn"),
-              "Create Account",
+              text_values$create_account_button,
               class = slot_class("primary_button", "ssb-auth__primary btn-success btn-block")
             ),
             shiny::div(
               class = slot_class("link_wrap", "ssb-auth__link-wrap"),
               shiny::actionButton(
                 ns("show_login"),
-                "Already have account",
+                text_values$already_account_link,
                 class = slot_class("secondary_button", "ssb-auth__link")
               )
             )

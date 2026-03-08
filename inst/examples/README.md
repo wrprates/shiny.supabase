@@ -16,6 +16,12 @@ More complete interface with user data
 - User information
 - Session status
 
+### 🇧🇷 [Basic PT](basic-pt/)
+Basic app with translated authentication UI
+- Portuguese login/signup labels
+- Localized placeholders and buttons
+- Uses `auth_ui_options$text`
+
 ### 🚀 [Advanced](advanced/)
 Complete and professional dashboard
 - shinydashboard

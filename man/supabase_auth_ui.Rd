@@ -12,6 +12,7 @@ supabase_auth_ui(
   custom_styles = NULL,
   class_map = NULL,
   theme = list(),
+  text = list(),
   compact = FALSE,
   enable_enter_submit = TRUE
 )
@@ -31,6 +32,8 @@ supabase_auth_ui(
 title, panel, field, primary_button, secondary_button, link_wrap, messages)}
 
 \item{theme}{Named list of CSS variable overrides for default auth theme}
+
+\item{text}{Named list of UI text overrides for labels, placeholders and button text}
 
 \item{compact}{Use denser spacing for smaller layouts (default: FALSE)}
 
