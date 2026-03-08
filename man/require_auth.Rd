@@ -8,7 +8,8 @@ require_auth(
   ui_function,
   client,
   login_title = "Authentication Required",
-  show_signup = TRUE
+  show_signup = TRUE,
+  persist_session = TRUE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ require_auth(
 \item{login_title}{Title for the login form (default: "Authentication Required")}
 
 \item{show_signup}{Whether to show signup option (default: TRUE)}
+
+\item{persist_session}{Persist authentication in browser storage across page reloads (default: TRUE)}
 }
 \value{
 A Shiny UI function that handles authentication
