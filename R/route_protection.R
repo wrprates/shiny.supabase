@@ -8,6 +8,7 @@
 #' @param client Supabase client object
 #' @param login_title Title for the login form (default: "Authentication Required")
 #' @param show_signup Whether to show signup option (default: TRUE)
+#' @param persist_session Persist authentication in browser storage across page reloads (default: TRUE)
 #'
 #' @return A Shiny UI function that handles authentication
 #' @export
@@ -17,11 +18,86 @@ require_auth <- function(
   ui_function,
   client,
   login_title = "Authentication Required",
-  show_signup = TRUE
+  show_signup = TRUE,
+  persist_session = TRUE
 ) {
+  debug_enabled <- isTRUE(getOption("shiny.supabase.debug", FALSE))
+  debug_js <- if (debug_enabled) "true" else "false"
+
   function(request) {
     # Main content area - rendered server-side based on auth status
-    shiny::uiOutput("__supabase_main_content__")
+    if (!persist_session) {
+      return(shiny::uiOutput("__supabase_main_content__"))
+    }
+
+    shiny::tagList(
+      shiny::uiOutput("__supabase_main_content__"),
+      shiny::tags$script(shiny::HTML(
+        sprintf(
+          "
+        (function() {
+          var AUTH_KEY = 'shiny.supabase.auth';
+          var INPUT_ID = 'supabase_persisted_auth';
+          var DEBUG = %s;
+
+          function debugLog(msg) {
+            if (DEBUG && window.console && typeof window.console.log === 'function') {
+              console.log('[shiny.supabase]', msg);
+            }
+          }
+
+          function pushStoredAuth() {
+            try {
+              var stored = window.localStorage.getItem(AUTH_KEY);
+              debugLog('pushStoredAuth called. hasStored=' + (!!stored));
+              if (stored && window.Shiny && typeof window.Shiny.setInputValue === 'function') {
+                window.Shiny.setInputValue(INPUT_ID, stored, {priority: 'event'});
+                debugLog('stored auth sent to Shiny input');
+              }
+            } catch (e) {
+              // Ignore storage access errors.
+              debugLog('pushStoredAuth error: ' + (e && e.message ? e.message : e));
+            }
+          }
+
+          document.addEventListener('shiny:connected', pushStoredAuth);
+          // Also try once on load in case this script is evaluated after connected event.
+          setTimeout(pushStoredAuth, 0);
+
+          if (window.Shiny && typeof window.Shiny.addCustomMessageHandler === 'function') {
+            window.Shiny.addCustomMessageHandler('supabase_auth_storage', function(message) {
+              if (!message || !message.action) return;
+
+              try {
+                if (message.action === 'save' && message.data) {
+                  window.localStorage.setItem(AUTH_KEY, JSON.stringify(message.data));
+                  debugLog('auth saved to localStorage');
+                }
+
+                if (message.action === 'clear') {
+                  window.localStorage.removeItem(AUTH_KEY);
+                  debugLog('auth removed from localStorage');
+                }
+              } catch (e) {
+                // Ignore storage access errors.
+                debugLog('storage handler error: ' + (e && e.message ? e.message : e));
+              }
+            });
+            debugLog('custom message handler registered');
+
+            // Server-triggered fallback to request persisted auth after observers are ready.
+            window.Shiny.addCustomMessageHandler('supabase_request_persisted_auth', function(message) {
+              debugLog('server requested persisted auth');
+              pushStoredAuth();
+            });
+          }
+        })();
+        "
+          ,
+          debug_js
+        )
+      ))
+    )
   }
 }
 
@@ -36,6 +112,7 @@ require_auth <- function(
 #' @param login_title Title for the login form (default: "Authentication Required")
 #' @param show_signup Whether to show signup option (default: TRUE)
 #' @param auto_refresh Enable automatic token refresh (default: TRUE)
+#' @param persist_session Persist authentication in browser storage across page reloads (default: TRUE)
 #'
 #' @return A Shiny server function that handles authentication
 #' @export
@@ -47,20 +124,136 @@ auth_server_guard <- function(
   ui_function = NULL,
   login_title = "Authentication Required",
   show_signup = TRUE,
-  auto_refresh = TRUE
+  auto_refresh = TRUE,
+  persist_session = TRUE
 ) {
   function(input, output, session, request = NULL) {
+    debug_enabled <- isTRUE(getOption("shiny.supabase.debug", FALSE))
+    debug_log <- function(fmt, ...) {
+      if (!debug_enabled) {
+        return(invisible(NULL))
+      }
+      message(sprintf("[shiny.supabase] %s", sprintf(fmt, ...)))
+    }
+
+    debug_log(
+      "auth_server_guard init session=%s persist_session=%s auto_refresh=%s",
+      session$token,
+      persist_session,
+      auto_refresh
+    )
+
     # Initialize secure session state (server-side only)
     user_state <- init_secure_session(session)
+    was_authenticated <- shiny::reactiveVal(FALSE)
 
     # Initialize authentication module
     auth_state <- supabase_auth_server("auth", client)
+
+    persist_auth_state <- function(state) {
+      if (!persist_session) {
+        return(invisible(NULL))
+      }
+
+      debug_log(
+        "persist_auth_state authenticated=%s has_access=%s has_refresh=%s expires_at=%s",
+        isTRUE(state$authenticated),
+        !is.null(state$access_token) && nzchar(state$access_token),
+        !is.null(state$refresh_token) && nzchar(state$refresh_token),
+        ifelse(is.null(state$expires_at), "NULL", as.character(state$expires_at))
+      )
+
+      session$sendCustomMessage("supabase_auth_storage", list(
+        action = "save",
+        data = list(
+          authenticated = TRUE,
+          user = state$user,
+          access_token = state$access_token,
+          refresh_token = state$refresh_token,
+          expires_at = state$expires_at
+        )
+      ))
+    }
+
+    clear_persisted_auth <- function() {
+      if (!persist_session) {
+        return(invisible(NULL))
+      }
+
+      debug_log("clear_persisted_auth")
+      session$sendCustomMessage("supabase_auth_storage", list(
+        action = "clear"
+      ))
+    }
+
+    # Restore persisted auth (if available) on initial app load.
+    if (persist_session) {
+      session$onFlushed(function() {
+        debug_log("onFlushed: requesting persisted auth from browser")
+        session$sendCustomMessage("supabase_request_persisted_auth", list())
+      }, once = TRUE)
+
+      shiny::observeEvent(input$supabase_persisted_auth, {
+        debug_log(
+          "observe persisted auth triggered. input present=%s",
+          !is.null(input$supabase_persisted_auth) && nzchar(input$supabase_persisted_auth)
+        )
+
+        # Avoid overriding active authenticated state.
+        if (user_state()$authenticated) {
+          debug_log("skip restore: user_state already authenticated")
+          return()
+        }
+
+        restored_auth <- tryCatch(
+          jsonlite::fromJSON(input$supabase_persisted_auth, simplifyVector = FALSE),
+          error = function(e) NULL
+        )
+
+        has_required_fields <- !is.null(restored_auth) &&
+          isTRUE(restored_auth$authenticated) &&
+          !is.null(restored_auth$access_token) &&
+          !is.null(restored_auth$refresh_token)
+
+        if (!has_required_fields) {
+          debug_log("restore rejected: missing required fields")
+          clear_persisted_auth()
+          return()
+        }
+
+        debug_log("restore accepted: validating/restoring session")
+
+        update_session_state(
+          user_state,
+          authenticated = TRUE,
+          user = restored_auth$user,
+          access_token = restored_auth$access_token,
+          refresh_token = restored_auth$refresh_token,
+          expires_at = restored_auth$expires_at
+        )
+
+        restored_state <- validate_and_refresh_session(
+          client,
+          user_state,
+          force_validate = TRUE
+        )
+
+        if (restored_state$authenticated) {
+          debug_log("restore success after validation")
+          persist_auth_state(restored_state)
+        } else {
+          debug_log("restore failed after validation: session unauthenticated")
+          clear_persisted_auth()
+        }
+      }, once = TRUE, ignoreInit = FALSE)
+    }
 
     # Sync auth module state with secure session state (login direction)
     shiny::observe({
       auth_data <- auth_state()
 
       if (auth_data$authenticated) {
+        debug_log("auth module authenticated event")
         update_session_state(
           user_state,
           authenticated = TRUE,
@@ -69,6 +262,8 @@ auth_server_guard <- function(
           refresh_token = auth_data$refresh_token,
           expires_at = auth_data$expires_at
         )
+
+        persist_auth_state(user_state())
       }
     })
 
@@ -79,6 +274,7 @@ auth_server_guard <- function(
 
       # If user_state is not authenticated but auth_state is, sync the logout
       if (!current_state$authenticated && current_auth$authenticated) {
+        debug_log("sync auth_state -> unauthenticated")
         auth_state(list(
           authenticated = FALSE,
           user = NULL,
@@ -89,6 +285,19 @@ auth_server_guard <- function(
       }
     })
 
+    # Clear persisted auth only when there is an authenticated -> unauthenticated transition.
+    shiny::observe({
+      current_authenticated <- isTRUE(user_state()$authenticated)
+      previous_authenticated <- was_authenticated()
+
+      if (previous_authenticated && !current_authenticated) {
+        debug_log("authenticated transition TRUE -> FALSE")
+        clear_persisted_auth()
+      }
+
+      was_authenticated(current_authenticated)
+    })
+
     # Automatic token validation and refresh
     if (auto_refresh) {
       shiny::observe({
@@ -97,7 +306,14 @@ auth_server_guard <- function(
         current_state <- user_state()
         if (current_state$authenticated) {
           # Validate and refresh if necessary
-          validate_and_refresh_session(client, user_state, force_validate = FALSE)
+          debug_log("auto_refresh tick: validating current session")
+          updated_state <- validate_and_refresh_session(client, user_state, force_validate = FALSE)
+          if (updated_state$authenticated) {
+            debug_log("auto_refresh tick: session valid")
+            persist_auth_state(updated_state)
+          } else {
+            debug_log("auto_refresh tick: session invalidated")
+          }
         }
       })
     }

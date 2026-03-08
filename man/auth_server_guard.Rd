@@ -10,7 +10,8 @@ auth_server_guard(
   ui_function = NULL,
   login_title = "Authentication Required",
   show_signup = TRUE,
-  auto_refresh = TRUE
+  auto_refresh = TRUE,
+  persist_session = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ auth_server_guard(
 \item{show_signup}{Whether to show signup option (default: TRUE)}
 
 \item{auto_refresh}{Enable automatic token refresh (default: TRUE)}
+
+\item{persist_session}{Persist authentication in browser storage across page reloads (default: TRUE)}
 }
 \value{
 A Shiny server function that handles authentication

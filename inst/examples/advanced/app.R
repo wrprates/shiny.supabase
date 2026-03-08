@@ -268,12 +268,18 @@ protected_server <- function(input, output, session, user_state) {
     }
   })
 
-  # Disconnection monitor
+  # Disconnection monitor: reload only on authenticated -> unauthenticated transition
+  was_authenticated <- reactiveVal(FALSE)
   observe({
     current_user <- user_state()
-    if (!current_user$authenticated) {
+    current_authenticated <- isTRUE(current_user$authenticated)
+    previous_authenticated <- was_authenticated()
+
+    if (previous_authenticated && !current_authenticated) {
       session$reload()
     }
+
+    was_authenticated(current_authenticated)
   })
 }
 
@@ -290,7 +296,12 @@ ui <- require_auth(
 
 server <- auth_server_guard(
   client = supabase,
-  protected_server_function = protected_server
+  protected_server_function = protected_server,
+  ui_function = protected_ui,
+  login_title = "Sign In to System",
+  show_signup = TRUE,
+  auto_refresh = TRUE,
+  persist_session = TRUE
 )
 
 # Executar o app
