@@ -158,7 +158,7 @@ protected_ui <- function(request) {
 protected_server <- function(input, output, session, user_state) {
 
   # Módulo de logout
-  user_state <- supabase_logout_server("logout", supabase, user_state)
+  user_state <- supabase_logout_server("logout", supabase, user_state, reload_on_logout = TRUE)
 
   # User data
   output$user_info <- renderText({

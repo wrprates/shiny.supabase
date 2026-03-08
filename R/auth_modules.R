@@ -283,39 +283,56 @@ supabase_auth_ui <- function(
         "
         (function() {
           var ns = '%s';
-          var rootKey = '__ssb_enter_bind_' + ns;
+          var rootKey = '__ssb_enter_delegate_' + ns;
           if (window[rootKey]) return;
 
-          function triggerIfEnter(e, buttonId) {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              var btn = document.getElementById(buttonId);
-              if (btn) btn.click();
+          var targetToAction = {};
+          targetToAction[ns + 'email'] = 'login';
+          targetToAction[ns + 'password'] = 'login';
+          targetToAction[ns + 'signup_email'] = 'signup';
+          targetToAction[ns + 'signup_password'] = 'signup';
+          targetToAction[ns + 'signup_confirm'] = 'signup';
+
+          document.addEventListener('keydown', function(e) {
+            if (!e) return;
+            var isEnter = e.key === 'Enter' || e.keyCode === 13 || e.which === 13;
+            if (!isEnter) return;
+
+            var target = e.target;
+            if (!target) return;
+
+            var targetId = target.id || (target.getAttribute && target.getAttribute('id')) || '';
+            var actionName = targetToAction[targetId];
+            if (!actionName && target.closest) {
+              var parentWithId = target.closest('[id]');
+              if (parentWithId) {
+                actionName = targetToAction[parentWithId.id];
+              }
             }
-          }
+            if (!actionName) {
+              var active = document.activeElement;
+              if (active && active.id) {
+                actionName = targetToAction[active.id];
+              }
+            }
 
-          function bind() {
-            var loginBtn = ns + 'login_btn';
-            var signupBtn = ns + 'signup_btn';
-            var ids = [
-              [ns + 'email', loginBtn],
-              [ns + 'password', loginBtn],
-              [ns + 'signup_email', signupBtn],
-              [ns + 'signup_password', signupBtn],
-              [ns + 'signup_confirm', signupBtn]
-            ];
+            if (actionName) {
+              e.preventDefault();
+              e.stopPropagation();
+              // Force input value sync first; then trigger submit event.
+              if (target && typeof target.blur === 'function') target.blur();
+              setTimeout(function() {
+                if (window.Shiny && typeof window.Shiny.setInputValue === 'function') {
+                  window.Shiny.setInputValue(
+                    ns + 'enter_submit_target',
+                    actionName + ':' + Date.now(),
+                    {priority: 'event'}
+                  );
+                }
+              }, 15);
+            }
+          }, true);
 
-            ids.forEach(function(pair) {
-              var input = document.getElementById(pair[0]);
-              if (!input || input.dataset.ssbEnterBound === '1') return;
-              input.addEventListener('keydown', function(e) { triggerIfEnter(e, pair[1]); });
-              input.dataset.ssbEnterBound = '1';
-            });
-          }
-
-          document.addEventListener('shiny:connected', bind);
-          document.addEventListener('shiny:value', bind);
-          setTimeout(bind, 0);
           window[rootKey] = true;
         })();
         ",
@@ -392,8 +409,7 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
       set_message(NULL)
     })
 
-    # Handle login
-    shiny::observeEvent(input$login_btn, {
+    do_login <- function() {
       shinyjs::disable("login_btn")
       on.exit(shinyjs::enable("login_btn"), add = TRUE)
       set_message(NULL)
@@ -448,10 +464,9 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
           duration = 5
         )
       }
-    })
+    }
 
-    # Handle signup
-    shiny::observeEvent(input$signup_btn, {
+    do_signup <- function() {
       shinyjs::disable("signup_btn")
       on.exit(shinyjs::enable("signup_btn"), add = TRUE)
       set_message(NULL)
@@ -511,6 +526,26 @@ supabase_auth_server <- function(id, client, redirect_on_success = FALSE) {
           duration = 5
         )
       }
+    }
+
+    # Handle login
+    shiny::observeEvent(input$login_btn, {
+      do_login()
+    })
+
+    # Handle signup
+    shiny::observeEvent(input$signup_btn, {
+      do_signup()
+    })
+
+    # Handle Enter key submit from JS
+    shiny::observeEvent(input$enter_submit_target, {
+      target <- strsplit(input$enter_submit_target, ":", fixed = TRUE)[[1]][1]
+      if (identical(target, "login")) {
+        do_login()
+      } else if (identical(target, "signup")) {
+        do_signup()
+      }
     })
 
     # Return authentication state
@@ -551,25 +586,31 @@ supabase_logout_ui <- function(id, label = "Logout", class = "btn-danger") {
 supabase_logout_server <- function(id, client, user_state, reload_on_logout = FALSE) {
   shiny::moduleServer(id, function(input, output, session) {
     shiny::observeEvent(input$logout, {
+      debug_enabled <- isTRUE(getOption("shiny.supabase.debug", FALSE))
+      debug_log <- function(fmt, ...) {
+        if (debug_enabled) {
+          message(sprintf("[shiny.supabase] logout: %s", sprintf(fmt, ...)))
+        }
+      }
+
       current_state <- user_state()
 
       if (current_state$authenticated && !is.null(current_state$access_token)) {
+        debug_log("attempting remote signout")
         result <- supabase_signout(client, current_state$access_token)
 
-        if (result$success) {
-          # Clear server-side session state
-          user_state(list(
-            authenticated = FALSE,
-            user = NULL,
-            access_token = NULL,
-            refresh_token = NULL,
-            expires_at = NULL
-          ))
+        # Always clear local session state to avoid "stuck logged-in" UX.
+        user_state(list(
+          authenticated = FALSE,
+          user = NULL,
+          access_token = NULL,
+          refresh_token = NULL,
+          expires_at = NULL
+        ))
+        session$userData$supabase_auth <- NULL
 
-          # Clear session$userData
-          session$userData$supabase_auth <- NULL
-
-          # Show notification before reload (if enabled)
+        if (isTRUE(result$success)) {
+          debug_log("remote signout success")
           if (!reload_on_logout) {
             shiny::showNotification(
               "Logout successful!",
@@ -577,23 +618,23 @@ supabase_logout_server <- function(id, client, user_state, reload_on_logout = FA
               duration = 3
             )
           }
-
-          # Optional: reload page to ensure clean state
-          if (reload_on_logout) {
-            # Use a small delay to ensure state is cleared
-            shiny::invalidateLater(100, session)
-            shiny::observe({
-              session$reload()
-            })
-          }
         } else {
+          debug_log("remote signout failed: %s", result$error %||% "unknown")
           shiny::showNotification(
-            paste("Logout error:", result$error %||% "Unknown error"),
-            type = "error",
+            paste("Logged out locally. Remote signout error:", result$error %||% "Unknown error"),
+            type = "warning",
             duration = 5
           )
         }
+
+        if (reload_on_logout) {
+          shiny::invalidateLater(100, session)
+          shiny::observe({
+            session$reload()
+          })
+        }
       } else {
+        debug_log("logout clicked while unauthenticated")
         shiny::showNotification(
           "User is not authenticated",
           type = "warning",
