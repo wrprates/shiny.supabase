@@ -14,7 +14,8 @@ supabase_auth_ui(
   theme = list(),
   text = list(),
   compact = FALSE,
-  enable_enter_submit = TRUE
+  enable_enter_submit = TRUE,
+  enable_password_toggle = TRUE
 )
 }
 \arguments{
@@ -38,6 +39,8 @@ title, panel, field, primary_button, secondary_button, link_wrap, messages)}
 \item{compact}{Use denser spacing for smaller layouts (default: FALSE)}
 
 \item{enable_enter_submit}{Enable Enter key submit for login/signup (default: TRUE)}
+
+\item{enable_password_toggle}{Show password visibility toggle button (default: TRUE)}
 }
 \value{
 A Shiny UI element

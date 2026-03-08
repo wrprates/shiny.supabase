@@ -13,6 +13,7 @@
 #' @param text Named list of UI text overrides for labels, placeholders and button text
 #' @param compact Use denser spacing for smaller layouts (default: FALSE)
 #' @param enable_enter_submit Enable Enter key submit for login/signup (default: TRUE)
+#' @param enable_password_toggle Show password visibility toggle button (default: TRUE)
 #'
 #' @return A Shiny UI element
 #' @export
@@ -29,7 +30,8 @@ supabase_auth_ui <- function(
   theme = list(),
   text = list(),
   compact = FALSE,
-  enable_enter_submit = TRUE
+  enable_enter_submit = TRUE,
+  enable_password_toggle = TRUE
 ) {
   ns <- shiny::NS(id)
 
@@ -67,7 +69,7 @@ supabase_auth_ui <- function(
     focus_ring = "rgba(37, 99, 235, 0.22)"
   )
   theme_values <- modifyList(theme_defaults, theme)
-  text_defaults <- list(
+    text_defaults <- list(
     email_label = "Email",
     password_label = "Password",
     confirm_password_label = "Confirm password",
@@ -79,7 +81,9 @@ supabase_auth_ui <- function(
     login_button = "Sign In",
     create_account_link = "Create account",
     create_account_button = "Create Account",
-    already_account_link = "Already have account"
+    already_account_link = "Already have account",
+    password_toggle_show = "Show password",
+    password_toggle_hide = "Hide password"
   )
   text_values <- modifyList(text_defaults, text)
   container_style <- paste0(
@@ -151,7 +155,9 @@ supabase_auth_ui <- function(
         color: var(--ssb-text, #111827);
       }
       .ssb-auth__field .form-control {
+        box-sizing: border-box;
         width: 100%;
+        max-width: 100%;
         height: 44px;
         border-radius: 10px;
         border: 1px solid var(--ssb-input-border, #d1d5db);
@@ -162,6 +168,38 @@ supabase_auth_ui <- function(
       .ssb-auth__field .form-control:focus {
         border-color: var(--ssb-input-border-focus, #2563eb);
         box-shadow: 0 0 0 3px var(--ssb-focus-ring, rgba(37,99,235,.22));
+      }
+      .ssb-auth__password-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+      }
+      .ssb-auth__password-wrap .shiny-input-container {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+      }
+      .ssb-auth__password-wrap .form-control {
+        padding-right: 42px;
+      }
+      .ssb-auth__password-toggle {
+        position: absolute;
+        right: 10px;
+        top: calc(100% - 22px);
+        transform: translateY(-50%);
+        z-index: 2;
+        border: none;
+        background: transparent;
+        color: var(--ssb-muted, #6b7280);
+        padding: 2px 4px;
+        line-height: 1;
+        font-size: 18px;
+      }
+      .ssb-auth__password-toggle:hover,
+      .ssb-auth__password-toggle:focus {
+        color: var(--ssb-text, #111827);
+        outline: none;
       }
       .ssb-auth__primary {
         width: 100%;
@@ -243,10 +281,24 @@ supabase_auth_ui <- function(
           ),
           shiny::div(
             class = slot_class("field", "ssb-auth__field"),
-            shiny::passwordInput(
-              ns("password"),
-              text_values$password_label,
-              placeholder = text_values$login_password_placeholder
+            shiny::div(
+              class = "ssb-auth__password-wrap",
+              shiny::passwordInput(
+                ns("password"),
+                text_values$password_label,
+                placeholder = text_values$login_password_placeholder
+              ),
+              if (isTRUE(enable_password_toggle)) {
+                shiny::tags$button(
+                  type = "button",
+                  class = "ssb-auth__password-toggle",
+                  `data-toggle-password` = "true",
+                  `data-target` = ns("password"),
+                  title = text_values$password_toggle_show,
+                  `aria-label` = text_values$password_toggle_show,
+                  shiny::tags$span(class = "ssb-auth__eye-icon", `aria-hidden` = "true", "👁")
+                )
+              }
             )
           ),
           shiny::actionButton(
@@ -280,18 +332,46 @@ supabase_auth_ui <- function(
             ),
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::passwordInput(
-                ns("signup_password"),
-                text_values$password_label,
-                placeholder = text_values$signup_password_placeholder
+              shiny::div(
+                class = "ssb-auth__password-wrap",
+                shiny::passwordInput(
+                  ns("signup_password"),
+                  text_values$password_label,
+                  placeholder = text_values$signup_password_placeholder
+                ),
+                if (isTRUE(enable_password_toggle)) {
+                  shiny::tags$button(
+                    type = "button",
+                    class = "ssb-auth__password-toggle",
+                    `data-toggle-password` = "true",
+                    `data-target` = ns("signup_password"),
+                    title = text_values$password_toggle_show,
+                    `aria-label` = text_values$password_toggle_show,
+                    shiny::tags$span(class = "ssb-auth__eye-icon", `aria-hidden` = "true", "👁")
+                  )
+                }
               )
             ),
             shiny::div(
               class = slot_class("field", "ssb-auth__field"),
-              shiny::passwordInput(
-                ns("signup_confirm"),
-                text_values$confirm_password_label,
-                placeholder = text_values$signup_confirm_placeholder
+              shiny::div(
+                class = "ssb-auth__password-wrap",
+                shiny::passwordInput(
+                  ns("signup_confirm"),
+                  text_values$confirm_password_label,
+                  placeholder = text_values$signup_confirm_placeholder
+                ),
+                if (isTRUE(enable_password_toggle)) {
+                  shiny::tags$button(
+                    type = "button",
+                    class = "ssb-auth__password-toggle",
+                    `data-toggle-password` = "true",
+                    `data-target` = ns("signup_confirm"),
+                    title = text_values$password_toggle_show,
+                    `aria-label` = text_values$password_toggle_show,
+                    shiny::tags$span(class = "ssb-auth__eye-icon", `aria-hidden` = "true", "👁")
+                  )
+                }
               )
             ),
             shiny::actionButton(
@@ -375,6 +455,50 @@ supabase_auth_ui <- function(
         })();
         ",
         ns("")
+      )))
+    },
+    if (isTRUE(enable_password_toggle)) {
+      shiny::tags$script(shiny::HTML(sprintf(
+        "
+        (function() {
+          var ns = '%s';
+          var rootKey = '__ssb_pwd_toggle_' + ns;
+          if (window[rootKey]) return;
+
+          var showLabel = %s;
+          var hideLabel = %s;
+
+          function setIcon(btn, visible) {
+            var span = btn.querySelector('.ssb-auth__eye-icon');
+            if (!span) return;
+            span.textContent = visible ? '🙈' : '👁';
+          }
+
+          document.addEventListener('click', function(e) {
+            var btn = e.target && e.target.closest ? e.target.closest('[data-toggle-password=\"true\"]') : null;
+            if (!btn) return;
+            e.preventDefault();
+
+            var targetId = btn.getAttribute('data-target');
+            if (!targetId) return;
+            var input = document.getElementById(targetId);
+            if (!input) return;
+
+            var visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
+
+            var nextVisible = input.type === 'text';
+            btn.setAttribute('title', nextVisible ? hideLabel : showLabel);
+            btn.setAttribute('aria-label', nextVisible ? hideLabel : showLabel);
+            setIcon(btn, nextVisible);
+          }, true);
+
+          window[rootKey] = true;
+        })();
+        ",
+        ns(""),
+        jsonlite::toJSON(text_values$password_toggle_show, auto_unbox = TRUE),
+        jsonlite::toJSON(text_values$password_toggle_hide, auto_unbox = TRUE)
       )))
     },
     if (!is.null(custom_styles) && nzchar(paste(custom_styles, collapse = ""))) {
